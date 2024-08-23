@@ -13,6 +13,7 @@ go get github.com/gorilla/websocket
 - go语言控制鼠标移动, go语言控制键盘输入
 - 手机控制电脑, 包括按键, 组合键, 音量媒体控制、简易鼠标、简易26键键盘等
 - web浏览器端的形式，微信里面打开局域网页面就行
+- 支持手机扫描电脑端二维码直接访问局域网地址
 - 支持配置自定义本地应用, 手机端一键打开
 ```yml
 # congfig.yml
@@ -32,3 +33,4 @@ apps:
 - 页面效果图见`appimg`目录
 - ![alt 页面控制图](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app.jpg)
 - ![alt 页面控制图1](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app1.jpg)
+- ![alt 页面控制图2](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app2.jpg)

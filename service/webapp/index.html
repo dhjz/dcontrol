@@ -26,12 +26,16 @@
         #keyboard div i:active{ background: #ddd;}
         #keyboard div.f1 i{ padding: 0 3px; font-size: 0.8em;}
         #keyboard div.f2 i{ padding: 0 3px; font-size: 0.7em;}
+        .qrcode { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .qrwrap { background: #fff; padding: 20px; border-radius: 10px; }
+        .qrcode-img { width: 320px; height: 320px; border: 1px solid #ccc; margin-bottom: 10px; }
         @media screen and (min-width: 1200px) {
             #keyboard div { font-size: 44px; }
             #keyboard div i, #keyboard div span { line-height: 44px; }
         }
     </style>
     <script src="./petite-vue.iife.js"></script>
+    <script src="./qr-creator.min.js"></script>
 </head>
 <body @vue:mounted="mounted" xstyle="height:100vh; display:flex; flex-direction:column;">
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
@@ -44,6 +48,7 @@
         <button  @click="sendkey('ESC')">ESC</button>
         <button  @click="sendkey('ALT,ENTER')">全屏</button>
         <button  @click="sendkey('WIN,D')">桌面</button>
+        <button  @click="showQr = true" v-show="ip">二维码</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button  @click="sendkey('MEDIA_PREV_TRACK')">下一曲</button>
@@ -82,6 +87,7 @@
         </div>
         <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 46px; margin-left: 10px;">SPACE</i></div>
     </div>
+    <div class="qrcode" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
     
     <script>
         const { createApp } = PetiteVue
@@ -95,6 +101,8 @@
             status: '',
             keystr: '',
             appList: [],
+            ip: '',
+            showQr: false,
             sendkey(val) {
                 request(`/monitor/sendkey?key=${val}`);
             },
@@ -111,6 +119,19 @@
                 console.log('mounted...');
                 request('/monitor/getApps').then(res => {
                     this.appList = res.data || []
+                })
+                request('/monitor/getIp').then(res => {
+                    if (res.data) {
+                        this.ip = res.data ? location.href.replace(location.hostname, res.data) : ''
+                        QrCreator.render({
+                            text: this.ip,
+                            radius: 0, // 0.0 to 0.5
+                            ecLevel: 'Q', // L, M, Q, H
+                            fill: '#000', // foreground color
+                            background: null, // color or null for transparent
+                            size: 320 // in pixels
+                        }, document.querySelector('#qrcode-img'));
+                    }
                 })
             }
         }).mount();

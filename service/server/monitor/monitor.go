@@ -24,6 +24,8 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.Contains(path, "/getKeyMap"):
 		getKeyMap(w, r)
+	case strings.Contains(path, "/getIp"):
+		getIp(w, r)
 	case strings.Contains(path, "/getApps"):
 		getApps(w, r)
 	case strings.Contains(path, "/sendkey"):
@@ -38,6 +40,10 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 func getKeyMap(w http.ResponseWriter, r *http.Request) {
 	// port, err := strconv.Atoi(r.URL.Query().Get("port"))
 	base.R(w).Ok(keys.KeyMap)
+}
+
+func getIp(w http.ResponseWriter, r *http.Request) {
+	base.R(w).Ok(utils.GetMainIP())
 }
 
 func getApps(w http.ResponseWriter, r *http.Request) {
