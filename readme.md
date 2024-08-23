@@ -10,6 +10,7 @@ go get github.com/spf13/viper
 go get github.com/gorilla/websocket
 ```
 ### 功能介绍
+- go语言控制鼠标移动, go语言控制键盘输入
 - 手机控制电脑, 包括按键, 组合键, 音量媒体控制、简易鼠标、简易26键键盘等
 - web浏览器端的形式，微信里面打开局域网页面就行
 - 支持配置自定义本地应用, 手机端一键打开
