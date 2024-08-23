@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器-遥控器</title>
+    <style>
+        body {
+            margin: 0;
+            width: 100%;
+        }
+        button {
+            font-size: 1.2rem;
+            padding: 0.4rem;
+            background: #00ABF5;
+            color: #ffffff;
+            display: inline-block;
+            margin: 0.2em 0.2em;
+            border: none;
+            white-space: pre;
+        }
+
+        button svg {
+            width: 1.3em;
+            height: 1.3em;
+            vertical-align: middle;
+        }
+
+        input[type=range] {
+            height: 56px;
+            -webkit-appearance: none;
+            margin: 10px 0;
+            width: 100%;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 30px;
+            cursor: pointer;
+            animate: 0.2s;
+            box-shadow: 0px 0px 0px #000000;
+            background: #E8E8E8;
+            border-radius: 0px;
+            border: 0px solid #010101;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            box-shadow: 0px 0px 0px #000031;
+            border: 0px solid #00001E;
+            height: 50px;
+            width: 50px;
+            border-radius: 50px;
+            background: #00ABF5;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -10px;
+        }
+        input[type=range]:focus::-webkit-slider-runnable-track {
+            background: #E8E8E8;
+        }
+
+        .playitem {
+            font-size: 1.2em;
+            padding: 1em;
+            white-space: nowrap;
+        }
+
+        .playitem.playing{
+            color: #ffffff;
+            background: #00ABF5;
+        }
+        input {
+            line-height: 32px;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+        #touch {
+            border: 1px solid #666;
+            width: 86%;
+            margin: 10px auto;
+            height: 50vh;
+            display: none;
+        }
+        #keyboard { position: fixed; display: none; bottom: 0; left:0; width: 100%; padding: 10px 0 20px; box-sizing: border-box; z-index: 999; background: #fafafa;box-shadow: 0px -1px 5px #ccc;}
+        #keyboard div{ display: flex; margin: 10px 0; justify-content: space-around; font-size: calc(100vw / 20);}
+        #keyboard div i, #keyboard div span{ user-select:none;font-style: normal; line-height: 46px; padding: 0 calc(100vw / 60); border: 1px solid #ddd; border-radius: 4px; white-space: pre; text-align: center;}
+        #keyboard div i:active{ background: #ddd;}
+        #keyboard div.f1 i{ padding: 0 3px; font-size: 0.8em;}
+        #keyboard div.f2 i{ padding: 0 3px; font-size: 0.7em;}
+    </style>
+    <script src="https://unpkg.com/petite-vue"></script>
+</head>
+<body @vue:mounted="update" xstyle="height:100vh; display:flex; flex-direction:column;">
+    <div v-if="error.length" style="text-align:center;font-size: 2rem;">{{error}}</div>
+    <div style="text-align:center;font-size: 2rem;margin: .2em 0 .1em;">{{pos_text}} / {{total_text}}</div>
+    <input type="range" min="0" :max="total" :value="pos" step="1" style="flex:0;width:100%;" @input="posInput" @change="posChange">
+    <div style="text-align:center;">
+        <button v-if="status=='play'|| status=='pause'" @click="post('prev')">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </button>
+        <button v-if="status=='play' || status=='pause'" @click="post('stop')">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <button v-if="status=='stop' || status=='pause'" @click="play(1)">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button v-if="status=='play'" @click="play(0)">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </button>        
+        <button v-if="status=='play'|| status=='pause'" @click="post('next')">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+        </button>        
+    </div>
+    <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
+        <select v-if="playlist" style="font-size:1.2em;padding: .2em;" @change="setPlaylistCate($event.target.selectedIndex)">
+            <option v-for="cate, index in playlist.cates" :selected="index==playlist.cateIndex">{{ cate }}</option>
+        </select>
+        <button  @click="update(true)">更新</button>
+        <button  @click="open('E:\\Program\\StellarPlayer\\StellarPlayer.exe')">恒星</button>
+        <button  @click="open('E:\\Program Files (x86)\\Tencent\\QQMusic\\QQMusic.exe')">QQ音乐</button>
+        <button  @click="toControl">5555</button>
+        <button  onclick="location.href='/'">根目录</button>
+    </div>
+    <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
+        <button  @click="sendkey('ALT,TAB')">TAB</button>
+        <button  @click="sendkey('SPACE')">空格</button>
+        <button  @click="sendkey('ESC')">ESC</button>
+        <button  @click="sendkey('ENTER')">全屏</button>
+        <button  @click="sendkey('WIN,D')">桌面</button>
+    </div>
+    <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
+        <button  @click="sendkey('MEDIA_PREV_TRACK')">下一曲</button>
+        <button  @click="sendkey('MEDIA_PLAY_PAUSE')">暂停</button>
+        <button  @click="sendkey('MEDIA_NEXT_TRACK')">下一曲</button>
+        <button  @click="sendkey('VOLUME_DOWN')">音量-</button>
+        <button  @click="sendkey('VOLUME_UP')">音量+</button>
+    </div>
+    <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
+        <input type="text" v-model="keystr">
+        <button  @click="sendkey(keystr)">发送按键</button>
+        <button  @click="open(keystr)">打开程序</button>
+    </div>
+    <div id="mousecontrol" style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
+        鼠标灵敏度:<input style="width: 40px;font-size: 18px;" value="2" type="number" id="mouseWeight">
+        <button onclick="changeDig()">  -  </button><button onclick="changeDig(true)">  +  </button>
+        <button onclick="toggle('#keyboard')">键盘</button><button onclick="sendmouse('2')">中键</button>
+    </div>
+    <div v-if="playlist" style="flex:auto;overflow:auto;background:#eee;">
+        <div v-for="item of playlist.items" class="playitem" :class="{playing: item.index == playlist.playingIndex}" @click="playPlaylist(item.index)">
+            {{ item.name }}
+        </div>
+    </div>
+    <div id="touch"></div>
+    <div id="keyboard">
+        <div class="f2">
+            <i k="CTRL,SHIFT">输入法</i><i k="ALT,F4">关闭</i><i k="WIN,D">桌面</i><i k="MEDIA_PREV_TRACK">上曲</i><i k="MEDIA_NEXT_TRACK">下曲</i>
+            <i k="MEDIA_PLAY_PAUSE">播放</i><i k="VOLUME_DOWN">音量-</i><i k="VOLUME_UP">音量+</i><i k="VOLUME_MUTE">静音</i>
+        </div>
+        <div class="f1"><i>ESC</i><i>F1</i><i>F2</i><i>F3</i><i>F4</i><i>F5</i><i>F6</i><i>F7</i><i>F8</i><i>F9</i><i>F10</i><i>F11</i><i>F12</i></div>
+        <div><i k="OEM_3">`</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>0</i><i>BACK</i></div>
+        <div><i>TAB</i><i>Q</i><i>W</i><i>E</i><i>R</i><i>T</i><i>Y</i><i>U</i><i>I</i><i>O</i><i>P</i></div>
+        <div><i k="CAPITAL">CAPS</i><i>A</i><i>S</i><i>D</i><i>F</i><i>G</i><i>H</i><i>J</i><i>K</i><i>L</i><i k="ENTER">回车</i></div>
+        <div><i>SHIFT</i><i>Z</i><i>X</i><i>C</i><i>V</i><i>B</i><i>N</i><i>M</i><i k="HOME">HM</i><i k="UP">↑</i><i k="END">ED</i></div>
+        <div>
+            <i k="OEM_COMMA">,</i><i k="OEM_PERIOD">.</i><i k="OEM_2">/ </i><i k="OEM_4"> { </i><i k="OEM_6"> } </i><i k="SEMICOLON"> ; </i>
+            <i k="OEM_7"> ' </i><i k="OEM_MINU"> - </i><i k="OEM_PLUS"> + </i><i k="LEFT">←</i><i k="DOWN">↓</i><i k="RIGHT">→</i>
+        </div>
+        <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 56px; margin-left: 10px;">SPACE</i></div>
+    </div>
+    
+    <script>
+        let baseUrl = 'http://' + location.hostname + ':5555';
+        PetiteVue.createApp({
+            error: 'connecting ...',
+            pos: 0,
+            total: 0,
+            mouseWeight: 1.4,
+            isConnected: true,
+            status: '',
+            keystr: '',
+            playlist: {},
+            get pos_text() {
+                return toHHMMSS(this.pos);
+            },
+            get total_text() {
+                return toHHMMSS(this.total);
+            },
+            sendkey(key) {
+                fetch('http://' + location.hostname + ':5556/sendkey?key=' + key);
+            },
+            sendmouse(key) {
+                fetch('http://' + location.hostname + ':5556/sendkey?mouse=' + key);
+            },
+            open(key) {
+                fetch('http://' + location.hostname + ':5556/open?exe=' + key);
+            },
+            toControl() {
+                location.href = baseUrl;
+            },
+            update(flag) {
+                if (flag) this.isConnected = true;
+                if (this.isConnected) {
+                    fetch(baseUrl + '/info')
+                        .catch((e) => {
+                            this.error = 'disconnected';
+                            this.playlist = {};
+                            this.isConnected = false;
+                        })
+                        .then((response) => {
+                            return response.json();
+                        })    
+                        .then((info) => {
+                            this.error = '';
+                            this.pos = info.pos;
+                            this.total = info.total;
+                            this.status = info.status;
+                            this.isConnected = true;
+                        });
+                    fetch(baseUrl + '/playlist')
+                    .catch((e) => {
+                            this.error = 'disconnected';
+                            this.playlist = {};
+                            this.isConnected = false;
+                        })
+                        .then((response) => {
+                            return response.json();
+                        })    
+                        .then((playlist) => {
+                            this.playlist = playlist;
+                            this.isConnected = true;
+                        });
+                    setTimeout(this.update, 1000);
+                }
+            },
+            posInput(e) {
+                throttle(()=>{
+                    this.setPos(e.target.value);
+                }, 200);
+            },
+            posChange(e) {
+                this.setPos(e.target.value);
+            },
+            setPos(pos)
+            {
+                let formData = new FormData();
+                formData.append('pos', pos);
+                fetch(baseUrl + '/progress', {
+                    method: 'POST',
+                    body: formData    
+                }); 
+            },
+            play(flag) {
+                let formData = new FormData();
+                formData.append('play', flag);
+                fetch(baseUrl + '/pause', {
+                    method: 'POST',
+                    body: formData    
+                });
+            },
+            post(method) {
+                fetch('/' + method, {
+                    method: 'POST', 
+                });
+            },
+            playPlaylist(index) {
+                let formData = new FormData();
+                formData.append('index', index);
+                fetch(baseUrl + '/playlist_play', {
+                    method: 'POST',
+                    body: formData    
+                });
+            },
+            setPlaylistCate(index) {
+                let formData = new FormData();
+                formData.append('index', index);
+                fetch(baseUrl + '/set_playlist_cate', {
+                    method: 'POST',
+                    body: formData    
+                });
+            }
+        }).mount();
+
+        var  timerId;
+        function throttle(func, delay) {
+            if (timerId) return;
+
+            timerId = setTimeout(function () {
+                func();
+                timerId  =  undefined;
+            }, delay);
+        };
+
+        function toHHMMSS(sec)
+        {
+            var sec_num = parseInt(sec, 10);
+            var hours   = Math.floor(sec_num / 3600);
+            var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+            var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+            if (hours   < 10) {hours   = "0"+hours;}
+            if (minutes < 10) {minutes = "0"+minutes;}
+            if (seconds < 10) {seconds = "0"+seconds;}
+            return hours+':'+minutes+':'+seconds;
+        };
+    </script>
+    <script>
+        websocket = new WebSocket("ws://" + location.hostname + ":5556/ws");
+        websocket.onmessage = function(evt) {
+            if(evt.data=="reload"){
+                window.location.pathname = "/";
+                window.location.reload(true);
+            }
+        }; 
+        websocket.onopen = function() {
+            console.log('socket open....');
+            document.getElementById('touch').style.display = 'block';
+        };
+        websocket.onclose = function() {
+            console.log('socket close....');
+            document.getElementById('touch').style.display = 'none';
+        };
+        let startTime = 0;
+        function sendData(data, force) {
+            const curr = new Date().getTime();
+            if (curr - startTime > 60 || force) {
+                console.log('socket send....', data);
+                websocket.send(data);
+                startTime = curr;
+            }
+        };
+        window.pos = {
+            xMove: 0,
+            yMove: 0,
+            curPoint: {
+                x: 0,
+                y: 0
+            },
+            startPoint: {},
+            isTouchMove: false,
+            startTime: 0
+        };
+        document.getElementById('touch').addEventListener('touchstart', function(ev){
+            var touch = ev.changedTouches[0];
+            pos.startPoint.x = touch.pageX;
+            pos.startPoint.y = touch.pageY;
+            pos.startTime = new Date().getTime();
+        });
+        document.getElementById('touch').addEventListener('touchmove', function(ev){
+            ev.preventDefault();
+            var touch = ev.changedTouches[0];
+            var diffPonit = {};
+            var movePonit = {
+                x: 0,
+                y: 0
+            };
+            diffPonit.x = touch.pageX - pos.startPoint.x;
+            diffPonit.y = touch.pageY - pos.startPoint.y;
+            /* 移动的距离 = 差值 + 当前坐标点
+            movePonit.x = diffPonit.x + pos.curPoint.x
+            movePonit.y = diffPonit.y + pos.curPoint.y */
+            if (Math.abs(diffPonit.x) < 10 && Math.abs(diffPonit.y) < 10) {
+                pos.isTouchMove = false;
+                return;
+            };
+            pos.isTouchMove = true;
+            move(diffPonit.x, diffPonit.y);
+        });
+        document.getElementById('touch').addEventListener('touchend', function(ev){
+            if (!pos.isTouchMove) {
+                console.log(pos.isTouchMove, '点击事件');
+                if (new Date().getTime() - pos.startTime > 600) {
+                    return sendData('pos,longclick', true);
+                };
+                return sendData('pos,click', true);
+            }
+            var touch = ev.changedTouches[0];
+            pos.curPoint.x += touch.pageX - pos.startPoint.x;
+            pos.curPoint.y += touch.pageY - pos.startPoint.y;
+            pos.isTouchMove = false;
+            sendData('pos,end', true);
+        });
+        function move(x, y) {
+            x = x || 0;
+            y = y || 0;
+            let mouseWeight = parseFloat(document.getElementById('mouseWeight').value || 2);
+            if (Math.abs(pos.xMove - x) > 1 || Math.abs(pos.yMove - y) > 1) {
+                console.log(Number(this.mouseWeight));
+                sendData('pos,start,' + mouseWeight * x.toFixed(3) + ',' + mouseWeight * y.toFixed(3));
+            };
+            pos.xMove = x;
+            pos.yMove = y;
+        };
+        function changeDig(isAdd) {
+            document.getElementById('mouseWeight').value = parseFloat(document.getElementById('mouseWeight').value || 2) + ( isAdd ? 1 : -1 );
+        };
+        function toggle(sel) {
+            let el = document.querySelector(sel);
+            if (!el) return;
+            el.style.display = el.style.display == 'block' ? 'none' : 'block';
+            if (sel == '#keyboard' && el.style.display == 'block') {
+                document.body.style.paddingBottom = el.offsetHeight + 'px';
+                window.scrollTo(0, document.getElementById('mousecontrol').offsetTop);
+            } else {
+                document.body.style.paddingBottom = '0';
+            }
+        };
+        Array.from(document.querySelectorAll('#keyboard i')).forEach(el => {
+            el.addEventListener('click', function () { 
+                let key = el.getAttribute('k') || el.innerText;
+                fetch('http://' + location.hostname + ':5556/sendkey?key=' + key);
+            });
+        });
+        /* document.addEventListener('click', function (e) {
+            let keyDom = document.querySelector('#keyboard');
+            if (!keyDom.contains(e.target) && keyDom.style.display == 'block' && e.target != document.querySelector('#keycontrol')) {
+                keyDom.style.display = 'none';
+            }
+        }) */
+    </script>
+</body>
+</html>

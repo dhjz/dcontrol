@@ -1,0 +1,1 @@
+taskkill /im dcontrol.exe /t /f

@@ -1,0 +1,19 @@
+# /etc/systemd/system
+# sudo systemctl enable dcontrol   sudo systemctl start dcontrol
+[Unit]
+Description=dcotrol Service
+After=network-online.target
+
+[Service]
+Type=simple
+User=nobody
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/opt/dcontrol
+ExecStart=/opt/dcontrol/dcontrol
+LimitNOFILE=1048576
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

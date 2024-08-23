@@ -1,0 +1,7 @@
+name: "远程控制"
+port: 666
+apps:
+  - name: 微信
+    path: E:\Program Files (x86)\Tencent\WeChat\WeChat.exe
+  - name: 网易云
+    path: E:\Program Files (x86)\NetEase\CloudMusic\cloudmusic.exe
