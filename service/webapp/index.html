@@ -26,7 +26,7 @@
         #keyboard div i:active{ background: #ddd;}
         #keyboard div.f1 i{ padding: 0 3px; font-size: 0.8em;}
         #keyboard div.f2 i{ padding: 0 3px; font-size: 0.7em;}
-        .qrcode { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .dialog { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .qrwrap { background: #fff; padding: 20px; border-radius: 10px; }
         .qrcode-img { width: 320px; height: 320px; border: 1px solid #ccc; margin-bottom: 10px; }
         @media screen and (min-width: 1200px) {
@@ -41,6 +41,7 @@
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button v-for="item in appList"  @click="open(item.path)">{{ item.name }}</button>
         <button  onclick="location.reload()">刷新</button>
+        <button  @click="showScreen">远程</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button  @click="sendkey('ALT,TAB')">TAB</button>
@@ -87,11 +88,13 @@
         </div>
         <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 46px; margin-left: 10px;">SPACE</i></div>
     </div>
-    <div class="qrcode" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
+    <div class="dialog" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
+    <div class="dialog" v-show="showPs" @click="hideScreen"><canvas id="screen-box"></canvas></div>
     
     <script>
         const { createApp } = PetiteVue
         let baseApi = '/control-api';
+        let screenTimer = null
         createApp({
             error: 'connecting ...',
             pos: 0,
@@ -103,6 +106,7 @@
             appList: [],
             ip: '',
             showQr: false,
+            showPs: false,
             sendkey(val) {
                 request(`/monitor/sendkey?key=${val}`);
             },
@@ -114,6 +118,18 @@
             },
             toControl() {
                 location.href = baseUrl;
+            },
+            showScreen() {
+                this.showPs = true
+                clearInterval(screenTimer)
+                screenTimer = setInterval(() => {
+                    window.sendData('screen,75', true)
+                }, 500)
+            },
+            hideScreen() {
+                clearInterval(screenTimer)
+                screenTimer = null
+                this.showPs = false
             },
             mounted() {
                 console.log('mounted...');
@@ -155,11 +171,27 @@
         });
 
         /*** websocket 鼠标移动相关  ***/
+        const canvas = document.getElementById('screen-box');
+        const ctx = canvas.getContext('2d');
+        console.log('ctx backingStorePixelRatio ',ctx.backingStorePixelRatio);
+        let dpr = window.devicePixelRatio || 1
         websocket = new WebSocket(`ws://${location.host}/ws`);
         websocket.onmessage = function(evt) {
-            if(evt.data=="reload"){
-                window.location.pathname = "/";
-                window.location.reload(true);
+            console.log('onmessage', evt.data);
+            if (evt.data && evt.data.size) {
+                const blob = new Blob([evt.data], { type: 'image/jpeg' });
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = Math.round(window.innerWidth * dpr);
+                    canvas.height =  canvas.width * img.height / img.width;
+                    canvas.style.width = window.innerWidth + 'px';
+                    canvas.style.height = (window.innerWidth * img.height / img.width) + 'px';
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    // ctx.scale(dpr, dpr)
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
             }
         }; 
         websocket.onopen = function() {

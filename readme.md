@@ -8,6 +8,8 @@
 go get github.com/getlantern/systray
 go get github.com/spf13/viper
 go get github.com/gorilla/websocket
+
+go mod tidy
 ```
 ### 功能介绍
 - go语言控制鼠标移动, go语言控制键盘输入

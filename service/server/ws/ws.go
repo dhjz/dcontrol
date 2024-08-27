@@ -2,6 +2,7 @@ package ws
 
 import (
 	"dcontrol/server/keys"
+	"dcontrol/server/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -54,7 +55,7 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		// 读取消息
-		messageType, msg, err := ws.ReadMessage()
+		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			fmt.Println("Error while reading message:", err)
 			break
@@ -69,19 +70,38 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		} else if wsdata == "pos,longclick" {
 			keys.ClickMouse("R")
 		} else if strings.HasPrefix(wsdata, "pos,start") {
-			parts := strings.Split(wsdata, ",")
-			if len(parts) == 4 {
-				fx, _ := strconv.ParseFloat(parts[2], 64)
-				fy, _ := strconv.ParseFloat(parts[3], 64)
+			arr := strings.Split(wsdata, ",")
+			if len(arr) == 4 {
+				fx, _ := strconv.ParseFloat(arr[2], 64)
+				fy, _ := strconv.ParseFloat(arr[3], 64)
 				keys.SetMouse(int(fx), int(fy), true)
 			}
 		}
 
 		// 可以选择回送消息给客户端
-		err = ws.WriteMessage(messageType, msg)
-		if err != nil {
-			fmt.Println("Error while writing message:", err)
-			break
+		// err = ws.WriteMessage(messageType, msg)
+		// if err != nil {
+		// 	fmt.Println("Error while writing message:", err)
+		// 	break
+		// }
+		if strings.HasPrefix(wsdata, "screen") {
+			arr := strings.Split(wsdata, ",")
+			var quality = 75
+			if len(arr) == 2 {
+				q, _ := strconv.Atoi(strings.TrimSpace(arr[1]))
+				quality = q
+			}
+			imgData, err := utils.CaptureScreen(quality)
+			if err != nil {
+				fmt.Println("Error capturing screen:", err)
+				continue
+			}
+
+			err = ws.WriteMessage(websocket.BinaryMessage, imgData)
+			if err != nil {
+				fmt.Println("Error sending image:", err)
+				return
+			}
 		}
 	}
 }

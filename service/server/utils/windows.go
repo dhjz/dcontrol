@@ -3,8 +3,10 @@
 package utils
 
 import (
+	"bytes"
 	"dcontrol/server/base"
 	"fmt"
+	"image/jpeg"
 	"os"
 	"os/exec"
 	"runtime"
@@ -12,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/getlantern/systray"
+	"github.com/kbinani/screenshot"
 )
 
 func RunCmd(str string, str1 string) error {
@@ -50,6 +53,25 @@ func GetCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	}
 
 	return strings.TrimSpace(string(output)), nil
+}
+
+func CaptureScreen(quality int) ([]byte, error) {
+	if quality == 0 {
+		quality = 75
+	}
+	bounds := screenshot.GetDisplayBounds(0)
+	img, err := screenshot.CaptureRect(bounds)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality})
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func OpenBrowser(url string) error {
