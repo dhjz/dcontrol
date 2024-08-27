@@ -8,7 +8,7 @@
 go get github.com/getlantern/systray
 go get github.com/spf13/viper
 go get github.com/gorilla/websocket
-
+go get github.com/kbinani/screenshot
 go mod tidy
 ```
 ### 功能介绍
@@ -17,6 +17,7 @@ go mod tidy
 - web浏览器端的形式，微信里面打开局域网页面就行
 - 支持手机扫描电脑端二维码直接访问局域网地址
 - 支持配置自定义本地应用, 手机端一键打开
+- 支持简易查看远程桌面
 ```yml
 # congfig.yml
 port: 666
