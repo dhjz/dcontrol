@@ -60,13 +60,14 @@
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <input type="text" v-model="keystr">
-        <button  @click="sendkey(keystr)">发送按键</button>
-        <button  @click="open(keystr)">打开程序</button>
+        <button  @click="sendtext(keystr)">发文</button>
+        <button  @click="open(keystr)">开Exe</button>
+        <button  @click="keystr = ''">清空</button>
     </div>
     <div id="mousecontrol" style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         鼠标速度:<input style="width: 40px;font-size: 18px;" value="2" type="number" id="mouseWeight">
         <button onclick="changeDig()"> - </button><button onclick="changeDig(true)"> + </button>
-        <button onclick="toggle('#keyboard')">键盘</button><button @click="sendkey('MBUTTON')">中键</button><button @click="sendkey('mmm')">右键</button>
+        <button onclick="toggle('#keyboard')">键盘</button><button @click="sendkey('MBUTTON')">中键</button><button @click="sendkey('RBUTTON')">右键</button>
     </div>
     <div id="touch">单击左键，长按右键</div>
     <div id="keyboard">
@@ -110,8 +111,8 @@
             sendkey(val) {
                 request(`/monitor/sendkey?key=${val}`);
             },
-            sendmouse(val) {
-                request(`/monitor/sendkey?mouse=${val}`);
+            sendtext(val) {
+                request(`/monitor/sendtext?val=${val}`);
             },
             open(val) {
                 request(`/monitor/open?cmd1=${val}`);
@@ -212,41 +213,23 @@
             }
         };
         window.pos = {
-            xMove: 0,
-            yMove: 0,
-            curPoint: {
-                x: 0,
-                y: 0
-            },
-            startPoint: {},
-            isTouchMove: false,
-            startTime: 0
+            startX: 0,
+            startY: 0,
+            startTime: 0,
+            isTouchMove: false
         };
         document.getElementById('touch').addEventListener('touchstart', function(ev){
-            var touch = ev.changedTouches[0];
-            pos.startPoint.x = touch.pageX;
-            pos.startPoint.y = touch.pageY;
+            pos.startX = ev.changedTouches[0].pageX;
+            pos.startY = ev.changedTouches[0].pageY;
             pos.startTime = new Date().getTime();
+            pos.isTouchMove = false;
         });
         document.getElementById('touch').addEventListener('touchmove', function(ev){
             ev.preventDefault();
-            var touch = ev.changedTouches[0];
-            var diffPonit = {};
-            var movePonit = {
-                x: 0,
-                y: 0
-            };
-            diffPonit.x = touch.pageX - pos.startPoint.x;
-            diffPonit.y = touch.pageY - pos.startPoint.y;
-            /* 移动的距离 = 差值 + 当前坐标点
-            movePonit.x = diffPonit.x + pos.curPoint.x
-            movePonit.y = diffPonit.y + pos.curPoint.y */
-            if (Math.abs(diffPonit.x) < 10 && Math.abs(diffPonit.y) < 10) {
-                pos.isTouchMove = false;
-                return;
-            };
-            pos.isTouchMove = true;
-            move(diffPonit.x, diffPonit.y);
+            const currX = ev.changedTouches[0].pageX;
+            const currY = ev.changedTouches[0].pageY;
+            pos.isTouchMove = Math.abs(currX - pos.startX) > 10 || Math.abs(currY - pos.startY) > 10
+            pos.isTouchMove && move(currX, currY);
         });
         document.getElementById('touch').addEventListener('touchend', function(ev){
             if (!pos.isTouchMove) {
@@ -256,22 +239,12 @@
                 };
                 return sendData('pos,click', true);
             }
-            var touch = ev.changedTouches[0];
-            pos.curPoint.x += touch.pageX - pos.startPoint.x;
-            pos.curPoint.y += touch.pageY - pos.startPoint.y;
-            pos.isTouchMove = false;
             sendData('pos,end', true);
         });
-        function move(x, y) {
-            x = x || 0;
-            y = y || 0;
-            let mouseWeight = parseFloat(document.getElementById('mouseWeight').value || 2) / 3;
-            if (Math.abs(pos.xMove - x) > 1 || Math.abs(pos.yMove - y) > 1) {
-                console.log(Number(this.mouseWeight));
-                sendData('pos,start,' + mouseWeight * x.toFixed(3) + ',' + mouseWeight * y.toFixed(3));
-            };
-            pos.xMove = x;
-            pos.yMove = y;
+        function move(x = 0, y = 0) {
+            let mouseWeight = parseFloat(document.getElementById('mouseWeight').value || 2) / 1;
+            console.log('mouseWeight', Number(this.mouseWeight));
+            sendData('pos,start,' + (mouseWeight * x).toFixed(0) + ',' + (mouseWeight * y).toFixed(0));
         };
         function changeDig(isAdd) {
             document.getElementById('mouseWeight').value = parseFloat(document.getElementById('mouseWeight').value || 2) + ( isAdd ? 1 : -1 );

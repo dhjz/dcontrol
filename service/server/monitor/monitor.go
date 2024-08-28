@@ -30,6 +30,8 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 		getApps(w, r)
 	case strings.Contains(path, "/sendkey"):
 		sendkey(w, r)
+	case strings.Contains(path, "/sendtext"):
+		sendtext(w, r)
 	case strings.Contains(path, "/open"):
 		open(w, r)
 	default:
@@ -55,10 +57,27 @@ func sendkey(w http.ResponseWriter, r *http.Request) {
 	if key == "RBUTTON" {
 		keys.ClickMouse("R")
 		return
+	} else if key == "LBUTTON" {
+		keys.ClickMouse("L")
+		return
+	} else if key == "MBUTTON" {
+		keys.ClickMouse("M")
+		return
 	}
 	keys.Run(key)
 
 	base.R(w).Ok(key)
+}
+
+func sendtext(w http.ResponseWriter, r *http.Request) {
+	val := r.URL.Query().Get("val")
+	err := keys.WriteAll(val)
+	if err != nil {
+		return
+	}
+	keys.RunKeys(keys.KeyMap["CTRL"], keys.KeyMap["V"])
+
+	base.R(w).Ok(val)
 }
 
 func open(w http.ResponseWriter, r *http.Request) {

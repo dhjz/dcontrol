@@ -31,6 +31,9 @@ const (
 	// closeGracePeriod = 10 * time.Second
 )
 
+var startX int
+var startY int
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true // 允许所有来源
@@ -72,10 +75,17 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		} else if strings.HasPrefix(wsdata, "pos,start") {
 			arr := strings.Split(wsdata, ",")
 			if len(arr) == 4 {
-				fx, _ := strconv.ParseFloat(arr[2], 64)
-				fy, _ := strconv.ParseFloat(arr[3], 64)
-				keys.SetMouse(int(fx), int(fy), true)
+				currX, _ := strconv.Atoi(arr[2])
+				currY, _ := strconv.Atoi(arr[3])
+				if startX != 0 && (startX != currX || startY != currY) {
+					keys.SetMouse(int(currX-startX), int(currY-startY), true)
+				}
+				startX = currX
+				startY = currY
 			}
+		} else if wsdata == "pos,end" {
+			startX = 0
+			startY = 0
 		}
 
 		// 可以选择回送消息给客户端
