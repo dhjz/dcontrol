@@ -52,11 +52,12 @@
         <button  @click="showQr = true" v-show="ip">二维码</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
-        <button  @click="sendkey('MEDIA_PREV_TRACK')">下一曲</button>
+        <button  @click="sendkey('MEDIA_PREV_TRACK')">上曲</button>
         <button  @click="sendkey('MEDIA_PLAY_PAUSE')">暂停</button>
-        <button  @click="sendkey('MEDIA_NEXT_TRACK')">下一曲</button>
+        <button  @click="sendkey('MEDIA_NEXT_TRACK')">下曲</button>
         <button  @click="sendkey('VOLUME_DOWN')">音量-</button>
         <button  @click="sendkey('VOLUME_UP')">音量+</button>
+        <button  @click="sendkey('VOLUME_MUTE')">静音</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <input type="text" v-model="keystr">
