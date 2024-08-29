@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"bytes"
+	"compress/gzip"
 	"dcontrol/server/keys"
 	"dcontrol/server/utils"
 	"fmt"
@@ -107,11 +109,19 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			err = ws.WriteMessage(websocket.BinaryMessage, imgData)
-			if err != nil {
-				fmt.Println("Error sending image:", err)
-				return
-			}
+			var buf bytes.Buffer
+			gz, _ := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
+			// jsonData, _ := json.Marshal(map[string]interface{}{
+			// 	"img":  imgData,
+			// 	"text": "some test text",
+			// })
+			// gz.Write(jsonData)
+			gz.Write(imgData)
+			gz.Close()
+
+			// bte := buf.Bytes()
+			// fmt.Println("screen size gzip: ", utils.FormatBytes(uint64(len(imgData))), utils.FormatBytes(uint64(len(bte))))
+			ws.WriteMessage(websocket.BinaryMessage, buf.Bytes())
 		}
 	}
 }

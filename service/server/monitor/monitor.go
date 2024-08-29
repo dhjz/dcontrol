@@ -9,6 +9,7 @@ import (
 	"dcontrol/server/utils"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -32,6 +33,8 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 		sendkey(w, r)
 	case strings.Contains(path, "/sendtext"):
 		sendtext(w, r)
+	case strings.Contains(path, "/sendclick"):
+		sendclick(w, r)
 	case strings.Contains(path, "/open"):
 		open(w, r)
 	default:
@@ -76,6 +79,19 @@ func sendtext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	keys.RunKeys(keys.KeyMap["CTRL"], keys.KeyMap["V"])
+
+	base.R(w).Ok(val)
+}
+
+func sendclick(w http.ResponseWriter, r *http.Request) {
+	val := r.URL.Query().Get("val")
+	arr := strings.Split(val, ",")
+	if len(arr) == 2 {
+		currX, _ := strconv.Atoi(arr[0])
+		currY, _ := strconv.Atoi(arr[1])
+		keys.SetMouse(currX, currY, false)
+		keys.ClickMouse("L")
+	}
 
 	base.R(w).Ok(val)
 }

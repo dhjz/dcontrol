@@ -36,9 +36,9 @@ const (
 var CursorPos POINT
 
 func SetMouse(x int, y int, isDiff bool) {
+	fmt.Println("cursorPos: ", CursorPos.X, CursorPos.Y, ", diff: ", x, y)
 	if isDiff {
 		procGetCursorPos.Call(uintptr(unsafe.Pointer(&CursorPos)))
-		fmt.Println("cursorPos: ", CursorPos.X, CursorPos.Y, ", diff: ", x, y)
 		procSetCursorPos.Call(uintptr(CursorPos.X+int32(x)), uintptr(CursorPos.Y+int32(y)))
 	} else {
 		procSetCursorPos.Call(uintptr(int32(x)), uintptr(int32(y)))

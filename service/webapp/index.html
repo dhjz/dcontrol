@@ -29,35 +29,39 @@
         .dialog { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .qrwrap { background: #fff; padding: 20px; border-radius: 10px; }
         .qrcode-img { width: 320px; height: 320px; border: 1px solid #ccc; margin-bottom: 10px; }
+        .dialog .close { position: fixed; z-index: 99999; bottom: 10px; right: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #fff; 
+            color: #666;  border-radius: 50%;  font-style: normal;  border: 1px solid #999;  opacity: .8; }
+        .dialog > em { position: absolute; left: 0; top: 0;width: 100%; height: 100%; z-index: -1; }
         @media screen and (min-width: 1200px) {
             #keyboard div { font-size: 44px; }
             #keyboard div i, #keyboard div span { line-height: 44px; }
         }
     </style>
-    <script src="./petite-vue.iife.js"></script>
-    <script src="./qr-creator.min.js"></script>
+    <script src="./lib/petite-vue.iife.js"></script>
+    <script src="./lib/qr-creator.min.js"></script>
+    <script src="./lib/pako.min.js"></script>
 </head>
 <body @vue:mounted="mounted" xstyle="height:100vh; display:flex; flex-direction:column;">
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button v-for="item in appList"  @click="open(item.path)">{{ item.name }}</button>
-        <button  onclick="location.reload()">刷新</button>
-        <button  @click="showScreen">远程</button>
+        <button onclick="location.reload()">刷新</button>
+        <button @click="showScreen">远程</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
-        <button  @click="sendkey('ALT,TAB')">TAB</button>
-        <button  @click="sendkey('ESC')">ESC</button>
-        <button  @click="sendkey('ALT,F4')">关闭</button>
-        <button  @click="sendkey('ENTER')">回车</button>
-        <button  @click="sendkey('WIN,D')">桌面</button>
-        <button  @click="showQr = true" v-show="ip">二维码</button>
+        <button @click="sendkey('ALT,TAB')">TAB</button>
+        <button @click="sendkey('ESC')">ESC</button>
+        <button @click="sendkey('ALT,F4')">关闭</button>
+        <button @click="sendkey('ENTER')">回车</button>
+        <button @click="sendkey('WIN,D')">桌面</button>
+        <button @click="showQr = true" v-show="ip">二维码</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
-        <button  @click="sendkey('MEDIA_PREV_TRACK')">上曲</button>
-        <button  @click="sendkey('MEDIA_PLAY_PAUSE')">暂停</button>
-        <button  @click="sendkey('MEDIA_NEXT_TRACK')">下曲</button>
-        <button  @click="sendkey('VOLUME_DOWN')">音量-</button>
-        <button  @click="sendkey('VOLUME_UP')">音量+</button>
-        <button  @click="sendkey('VOLUME_MUTE')">静音</button>
+        <button @click="sendkey('MEDIA_PREV_TRACK')">上曲</button>
+        <button @click="sendkey('MEDIA_PLAY_PAUSE')">暂停</button>
+        <button @click="sendkey('MEDIA_NEXT_TRACK')">下曲</button>
+        <button @click="sendkey('VOLUME_DOWN')">音量-</button>
+        <button @click="sendkey('VOLUME_UP')">音量+</button>
+        <button @click="sendkey('VOLUME_MUTE')">静音</button>
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <input type="text" v-model="keystr">
@@ -92,12 +96,14 @@
         <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 46px; margin-left: 10px;">SPACE</i></div>
     </div>
     <div class="dialog" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
-    <div class="dialog" v-show="showPs" @click="hideScreen"><canvas id="screen-box"></canvas></div>
+    <div class="dialog" v-show="showPs"><em></em><i class="close" @click="hideScreen">&times;</i><canvas id="screen-box" @click="canvasClick"></canvas></div>
     
     <script>
         const { createApp } = PetiteVue
         let baseApi = '/control-api';
         let screenTimer = null
+        window.deskWidth = 0
+        window.deskHeight = 0
         createApp({
             error: 'connecting ...',
             pos: 0,
@@ -126,13 +132,24 @@
                 this.showPs = true
                 clearInterval(screenTimer)
                 screenTimer = setInterval(() => {
-                    window.sendData('screen,75', true)
+                    window.sendData('screen,80', true)
                 }, 500)
             },
             hideScreen() {
                 clearInterval(screenTimer)
                 screenTimer = null
                 this.showPs = false
+            },
+            canvasClick(e) {
+                console.log(e);
+                const canvas = document.getElementById('screen-box');
+                const context = canvas.getContext('2d');
+                const rect = canvas.getBoundingClientRect();
+                const scale = canvas.style.width.replace('px', '') / window.deskWidth
+                const x = (event.clientX - rect.left) / scale;
+                const y = (event.clientY - rect.top) / scale;
+                console.log(x,y, event.clientY, rect.top);
+                request(`/monitor/sendclick?val=${x.toFixed(0)},${y.toFixed(0)}`);
             },
             mounted() {
                 console.log('mounted...');
@@ -179,22 +196,39 @@
         console.log('ctx backingStorePixelRatio ',ctx.backingStorePixelRatio);
         let dpr = window.devicePixelRatio || 1
         websocket = new WebSocket(`ws://${location.host}/ws`);
-        websocket.onmessage = function(evt) {
-            console.log('onmessage', evt.data);
-            if (evt.data && evt.data.size) {
-                const blob = new Blob([evt.data], { type: 'image/jpeg' });
-                const url = URL.createObjectURL(blob);
+        websocket.binaryType = 'arraybuffer';
+        websocket.onmessage = async function(evt) {
+            console.log('onmessage', evt.data, typeof evt.data);
+            if (evt.data && (evt.data.size || evt.data.byteLength)) {
                 const img = new Image();
+                // 传json和图片用下面3行
+                // const jsonData = JSON.parse(pako.ungzip(new Uint8Array(evt.data), { to: 'string' }));
+                // console.log('Received jsonData:', jsonData);
+                // img.src = 'data:image/jpeg;base64,' + jsonData.img;
+                // 只传图片用下面3行
+                const blob = new Blob([pako.ungzip(new Uint8Array(evt.data))], { type: 'image/jpeg' });
+                const url = URL.createObjectURL(blob)
+                img.src = url
                 img.onload = () => {
-                    canvas.width = Math.round(window.innerWidth * dpr);
-                    canvas.height =  canvas.width * img.height / img.width;
-                    canvas.style.width = window.innerWidth + 'px';
-                    canvas.style.height = (window.innerWidth * img.height / img.width) + 'px';
+                    window.deskWidth = img.width
+                    window.deskHeight = img.height
+                    let widthScale = window.innerWidth / img.width
+                    let heightScale = window.innerHeight / img.height
+                    if (widthScale <= heightScale) {
+                        canvas.width = Math.round(window.innerWidth * dpr);
+                        canvas.height =  canvas.width * img.height / img.width;
+                        canvas.style.width = window.innerWidth + 'px';
+                        canvas.style.height = (window.innerWidth * img.height / img.width) + 'px';
+                    } else {
+                        canvas.height =  Math.round(window.innerHeight * dpr);
+                        canvas.width = canvas.height * img.width / img.height;
+                        canvas.style.width = (window.innerHeight * img.width / img.height) + 'px';
+                        canvas.style.height = window.innerHeight + 'px';
+                    }
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     // ctx.scale(dpr, dpr)
                     URL.revokeObjectURL(url);
                 };
-                img.src = url;
             }
         }; 
         websocket.onopen = function() {
@@ -286,6 +320,22 @@
                 }).then(r => resolve(r)).catch(e => reject(e));
             });
         }
+
+        // function unGzip(blob) {
+        //     return new Promise(reso => {
+        //         const reader = new FileReader()
+        //         reader.onload = function(e) {
+        //             try {
+        //                 reso(pako.ungzip(new Uint8Array(e.target.result)))
+        //             } catch (e) {
+        //                 console.log('unGzip error', e);
+        //                 reso(null)
+        //             }
+        //         }
+        //         reader.onerror = () => reso(null)
+        //         reader.readAsArrayBuffer(blob)
+        //     })
+        // }
 
         var  timerId;
         function throttle(func, delay) {
