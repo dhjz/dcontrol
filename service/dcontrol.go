@@ -43,7 +43,9 @@ func main() {
 	fmt.Println("")
 	fmt.Println(utils.GetAllIPs())
 
-	utils.OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
+	if setting.Conf.Open {
+		utils.OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
+	}
 	go func() {
 		utils.GenTaskBarIcon()
 	}()

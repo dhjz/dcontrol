@@ -1,5 +1,6 @@
 name: "远程控制"
 port: 666
+open: false
 apps:
   - name: 微信
     path: E:\Program Files (x86)\Tencent\WeChat\WeChat.exe

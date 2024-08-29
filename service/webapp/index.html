@@ -45,9 +45,9 @@
     </div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button  @click="sendkey('ALT,TAB')">TAB</button>
-        <button  @click="sendkey('SPACE')">空格</button>
         <button  @click="sendkey('ESC')">ESC</button>
-        <button  @click="sendkey('ALT,ENTER')">全屏</button>
+        <button  @click="sendkey('ALT,F4')">关闭</button>
+        <button  @click="sendkey('ENTER')">回车</button>
         <button  @click="sendkey('WIN,D')">桌面</button>
         <button  @click="showQr = true" v-show="ip">二维码</button>
     </div>
@@ -73,6 +73,7 @@
     <div id="keyboard">
         <div class="f2">
             <i k="CTRL,A">全选</i><i k="CTRL,C">复制</i><i k="CTRL,V">粘贴</i><i k="CTRL,X">剪切</i><i k="CTRL,Z">撤销</i><i k="CTRL,S">保存</i>
+            <i k="ALT,ENTER">全屏</i>
         </div>
         <div class="f2">
             <i k="CTRL,SHIFT">输入法</i><i k="ALT,F4">关闭</i><i k="WIN,D">桌面</i><i k="MEDIA_PREV_TRACK">上曲</i><i k="MEDIA_NEXT_TRACK">下曲</i>
