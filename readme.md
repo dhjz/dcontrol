@@ -37,3 +37,4 @@ apps:
 - ![alt 页面控制图](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app.jpg)
 - ![alt 页面控制图1](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app1.jpg)
 - ![alt 页面控制图2](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app2.jpg)
+- ![alt 页面控制图3](https://gcore.jsdelivr.net/gh/dhjz/dcontrol@master/appimg/app3.jpg)
