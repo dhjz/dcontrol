@@ -96,7 +96,7 @@
         <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 46px; margin-left: 10px;">SPACE</i></div>
     </div>
     <div class="dialog" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
-    <div class="dialog" v-show="showPs"><em></em><i class="close" @click="hideScreen">&times;</i><canvas id="screen-box" @click="canvasClick"></canvas></div>
+    <div class="dialog" v-show="showPs"><em></em><i class="close" @click="hideScreen" v-longtap="handleLongTap">&times;</i><canvas id="screen-box" @click="canvasClick"></canvas></div>
     
     <script>
         const { createApp } = PetiteVue
@@ -151,6 +151,9 @@
                 console.log(x,y, event.clientY, rect.top);
                 request(`/monitor/sendclick?val=${x.toFixed(0)},${y.toFixed(0)}`);
             },
+            handleLongTap(e) {
+                console.log('longtap', e);
+            },
             mounted() {
                 console.log('mounted...');
                 request('/monitor/getApps').then(res => {
@@ -170,7 +173,7 @@
                     }
                 })
             }
-        }).mount();
+        }).directive('longtap', longtapDc).mount();
 
         function toggle(sel) {
             let el = document.querySelector(sel);
@@ -319,6 +322,43 @@
                     return res.json();
                 }).then(r => resolve(r)).catch(e => reject(e));
             });
+        }
+
+        function longtapDc({ el, get }) {
+            let val = get()
+            if (typeof val !== "function") {
+                console.warn(`[longtap:] provided expression is not a function, but has to be`);
+            }
+
+            // Define variable
+            let pressTimer = null;
+
+            let start = (e) => {
+                if (e instanceof MouseEvent && e.type === "click" && e.button !== 0) {
+                    return;
+                }
+                if (pressTimer === null) {
+                    pressTimer = setTimeout(() => {
+                        val(e);
+                    }, 500);
+                }
+            };
+
+            let cancel = () => {
+                if (pressTimer !== null) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+            };
+
+            el.addEventListener("mousedown", start);
+            el.addEventListener("touchstart", start);
+
+            el.addEventListener("click", cancel);
+            el.addEventListener("mouseup", cancel);
+            el.addEventListener("mouseout", cancel);
+            el.addEventListener("touchend", cancel);
+            el.addEventListener("touchcancel", cancel);
         }
 
         // function unGzip(blob) {
