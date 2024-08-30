@@ -18,7 +18,12 @@
         input[type=range]:focus::-webkit-slider-runnable-track{ background: #E8E8E8;}
         .playitem{ font-size: 1.2em; padding: 1em; white-space: nowrap;}
         .playitem.playing{ color: #ffffff; background: #00ABF5;}
-        input{ line-height: 32px; padding: 0 4px; box-sizing: border-box; user-select: auto; }
+        input{ line-height: 32px; padding: 0 4px; box-sizing: border-box; user-select: auto; outline: none; }
+        input[round] { border-radius: 16px; padding: 0 8px; }
+        .input { position: relative; display: block ;}
+        .input input { display: block; border: none; width: 100%; }
+        .input i { position: absolute; right: 3px; top: 6px; width: 18px !important; height: 18px !important; display: flex; align-items: center; 
+            justify-content: center; background: #eee;   color: #666;  border-radius: 50%;  font-style: normal;  }
         #touch{ border: 1px solid #666; width: 86%; margin: 10px auto; height: 50vh; line-height: 50vh; text-align: center; color: #ccc; display: none; user-select:none;}
         #keyboard { position: fixed; display: none; bottom: 0; left:0; width: 100%; padding: 10px 0 20px; box-sizing: border-box; z-index: 999; background: #fafafa;box-shadow: 0px -1px 5px #ccc;}
         #keyboard div{ display: flex; margin: 10px 0; justify-content: space-around; font-size: calc(100vw / 20);}
@@ -29,9 +34,11 @@
         .dialog { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         .qrwrap { background: #fff; padding: 20px; border-radius: 10px; }
         .qrcode-img { width: 320px; height: 320px; border: 1px solid #ccc; margin-bottom: 10px; }
-        .dialog .close { position: fixed; z-index: 99999; bottom: 10px; right: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #fff; 
-            color: #666;  border-radius: 50%;  font-style: normal;  border: 1px solid #999;  opacity: .8; }
+        .dialog .control { position: fixed; z-index: 9999999; bottom: 10px; left: 5px;  opacity: .8; display: flex; align-items: center; width: calc(100% - 15px); justify-content: flex-end; }
         .dialog > em { position: absolute; left: 0; top: 0;width: 100%; height: 100%; z-index: -1; }
+        .control i { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #fff; margin-left: 4px;
+            color: #666;  border-radius: 50%;  font-style: normal;  border: 1px solid #999;  }
+        .control .input { width: 0px; flex: 1; }
         @media screen and (min-width: 1200px) {
             #keyboard div { font-size: 44px; }
             #keyboard div i, #keyboard div span { line-height: 44px; }
@@ -96,7 +103,18 @@
         <div><span onclick="toggle('#keyboard')">隐藏</span><i style="flex: 1; line-height: 46px; margin-left: 10px;">SPACE</i></div>
     </div>
     <div class="dialog" v-show="showQr" @click="showQr = false"><div class="qrwrap"><div id="qrcode-img"></div><div>{{ ip }}</div><div>打开手机浏览器或者微信扫一扫</div></div></div>
-    <div class="dialog" v-show="showPs"><em></em><i class="close" @click="hideScreen" v-longtap="handleLongTap">&times;</i><canvas id="screen-box" @click="canvasClick"></canvas></div>
+    <div class="dialog" v-show="showPs">
+        <em></em>
+        <canvas id="screen-box" @click="canvasClick" v-longtap="handleLongTap"></canvas>
+        <div class="control">
+            <div class="input" v-show="inputShow" ><input type="text" v-model="keystr1" round @keyup="sendInput"><i @click="keystr1 = ''">&times;</i></div>
+            <i v-show="inputShow" @click="sendInput">↵</i>
+            <i v-show="inputShow" @click="sendkey('CTRL,Z')">↶</i>
+            <i v-show="inputShow" @click="sendkey('BACK')">⇦</i>
+            <i @click="inputShow = !inputShow">▩</i>
+            <i @click="hideScreen">&times;</i>
+        </div>
+    </div>
     
     <script>
         const { createApp } = PetiteVue
@@ -112,10 +130,21 @@
             isConnected: true,
             status: '',
             keystr: '',
+            keystr1: '',
             appList: [],
             ip: '',
             showQr: false,
             showPs: false,
+            inputShow: false,
+            sendInput(e) {
+                if (e.key.toLowerCase() == 'enter') {
+                    this.sendtext(this.keystr1)
+                    this.keystr1 = ''
+                }
+                if (e.key.toLowerCase() == 'backspace' && !this.keystr1) {
+                    this.sendkey('BACK')
+                }
+            },
             sendkey(val) {
                 request(`/monitor/sendkey?key=${val}`);
             },
@@ -140,6 +169,9 @@
                 screenTimer = null
                 this.showPs = false
             },
+            toggle(el) {
+                toggle(el)
+            },
             canvasClick(e) {
                 console.log(e);
                 const canvas = document.getElementById('screen-box');
@@ -152,7 +184,8 @@
                 request(`/monitor/sendclick?val=${x.toFixed(0)},${y.toFixed(0)}`);
             },
             handleLongTap(e) {
-                console.log('longtap', e);
+                console.log('handleLongTap...');
+                this.sendkey('RBUTTON')
             },
             mounted() {
                 console.log('mounted...');
@@ -194,6 +227,7 @@
         });
 
         /*** websocket 鼠标移动相关  ***/
+        window.isSocketOpen = false
         const canvas = document.getElementById('screen-box');
         const ctx = canvas.getContext('2d');
         console.log('ctx backingStorePixelRatio ',ctx.backingStorePixelRatio);
@@ -236,14 +270,17 @@
         }; 
         websocket.onopen = function() {
             console.log('socket open....');
+            isSocketOpen = true
             document.getElementById('touch').style.display = 'block';
         };
         websocket.onclose = function() {
             console.log('socket close....');
+            isSocketOpen = false
             document.getElementById('touch').style.display = 'none';
         };
         let startTime = 0;
         function sendData(data, force) {
+            if (!isSocketOpen) return;
             const curr = new Date().getTime();
             if (curr - startTime > 60 || force) {
                 console.log('socket send....', data);
@@ -326,30 +363,19 @@
 
         function longtapDc({ el, get }) {
             let val = get()
-            if (typeof val !== "function") {
-                console.warn(`[longtap:] provided expression is not a function, but has to be`);
-            }
+            if (typeof val !== "function") return;
 
-            // Define variable
-            let pressTimer = null;
+            let pressTimer = null
 
             let start = (e) => {
-                if (e instanceof MouseEvent && e.type === "click" && e.button !== 0) {
-                    return;
-                }
-                if (pressTimer === null) {
-                    pressTimer = setTimeout(() => {
-                        val(e);
-                    }, 500);
-                }
-            };
+                if (e instanceof MouseEvent && e.type === "click" && e.button !== 0) return;
+                if (pressTimer === null) pressTimer = setTimeout(() => val(e), 500);
+            }
 
             let cancel = () => {
-                if (pressTimer !== null) {
-                    clearTimeout(pressTimer);
-                    pressTimer = null;
-                }
-            };
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
 
             el.addEventListener("mousedown", start);
             el.addEventListener("touchstart", start);
