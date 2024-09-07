@@ -85,6 +85,13 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 				startX = currX
 				startY = currY
 			}
+		} else if strings.HasPrefix(wsdata, "pos,scroll") {
+			arr := strings.Split(wsdata, ",")
+			if len(arr) == 4 {
+				scroll, _ := strconv.Atoi(arr[2])
+				weight, _ := strconv.Atoi(arr[3])
+				keys.ScrollMouse(scroll, weight)
+			}
 		} else if wsdata == "pos,end" {
 			startX = 0
 			startY = 0

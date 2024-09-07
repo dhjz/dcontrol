@@ -49,6 +49,7 @@
     <script src="./lib/pako.min.js"></script>
 </head>
 <body @vue:mounted="mounted" xstyle="height:100vh; display:flex; flex-direction:column;">
+    <div id="logs"></div>
     <div style="padding: .3em;text-align:center;position:relative;box-shadow: 0 5px 10px -10px grey;">
         <button v-for="item in appList"  @click="open(item.path)">{{ item.name }}</button>
         <button onclick="location.reload()">刷新</button>
@@ -81,7 +82,7 @@
         <button onclick="changeDig()"> - </button><button onclick="changeDig(true)"> + </button>
         <button onclick="toggle('#keyboard')">键盘</button><button @click="sendkey('MBUTTON')">中键</button><button @click="sendkey('RBUTTON')">右键</button>
     </div>
-    <div id="touch">单击左键，长按右键</div>
+    <div id="touch">单击左键，长按右键，双指滚动</div>
     <div id="keyboard">
         <div class="f2">
             <i k="CTRL,A">全选</i><i k="CTRL,C">复制</i><i k="CTRL,V">粘贴</i><i k="CTRL,X">剪切</i><i k="CTRL,Z">撤销</i><i k="CTRL,S">保存</i>
@@ -289,26 +290,43 @@
             }
         };
         window.pos = {
+            doubleStartY: 0,
             startX: 0,
             startY: 0,
             startTime: 0,
             isTouchMove: false
         };
         document.getElementById('touch').addEventListener('touchstart', function(ev){
-            pos.startX = ev.changedTouches[0].pageX;
-            pos.startY = ev.changedTouches[0].pageY;
+            ev.preventDefault()
+            if (ev.touches.length > 1) {
+                pos.doubleStartY = ev.touches[0].clientY; // 获取第一个触点的起始位置
+            } else {
+                pos.startX = ev.changedTouches[0].pageX;
+                pos.startY = ev.changedTouches[0].pageY;
+            }
             pos.startTime = new Date().getTime();
             pos.isTouchMove = false;
         });
         document.getElementById('touch').addEventListener('touchmove', function(ev){
             ev.preventDefault();
-            const currX = ev.changedTouches[0].pageX;
-            const currY = ev.changedTouches[0].pageY;
-            pos.isTouchMove = Math.abs(currX - pos.startX) > 10 || Math.abs(currY - pos.startY) > 10
-            pos.isTouchMove && move(currX, currY);
+            if (ev.touches.length > 1) {
+                const currY = ev.touches[0].clientY;
+                const deltaY = currY - pos.doubleStartY;
+                pos.doubleStartY = currY; // 更新起始位置
+                // logs('pos.doubleStartY' + pos.doubleStartY)
+                if (Math.abs(deltaY) > 10) { // 阈值，避免小的抖动
+                    moveScroll(deltaY > 0)
+                }
+            } else {
+                const currX = ev.changedTouches[0].pageX;
+                const currY = ev.changedTouches[0].pageY;
+                pos.isTouchMove = Math.abs(currX - pos.startX) > 10 || Math.abs(currY - pos.startY) > 10
+                pos.isTouchMove && move(currX, currY);
+            }
         });
         document.getElementById('touch').addEventListener('touchend', function(ev){
-            if (!pos.isTouchMove) {
+            // logs('touchend' + pos.doubleStartY);
+            if (!pos.isTouchMove && pos.doubleStartY == 0) {
                 console.log(pos.isTouchMove, '点击事件');
                 if (new Date().getTime() - pos.startTime > 600) {
                     return sendData('pos,longclick', true);
@@ -316,12 +334,17 @@
                 return sendData('pos,click', true);
             }
             sendData('pos,end', true);
+            setTimeout(() => pos.doubleStartY = 0, 50) // 停止后再移动, 延迟设置, 不然好像会触发这个touchend两次
         });
         function move(x = 0, y = 0) {
             let mouseWeight = parseFloat(document.getElementById('mouseWeight').value || 2) / 1;
             console.log('mouseWeight', Number(this.mouseWeight));
             sendData('pos,start,' + (mouseWeight * x).toFixed(0) + ',' + (mouseWeight * y).toFixed(0));
         };
+        function moveScroll(isDown) {
+            let mouseWeight = parseFloat(document.getElementById('mouseWeight').value || 2) / 1;
+            sendData('pos,scroll,' + (isDown ? -1 : 1) + ',' + mouseWeight);
+        }
         function changeDig(isAdd) {
             document.getElementById('mouseWeight').value = parseFloat(document.getElementById('mouseWeight').value || 2) + ( isAdd ? 1 : -1 );
         };
@@ -332,6 +355,10 @@
                 keyDom.style.display = 'none';
             }
         }) */
+
+        function logs(val) {
+            document.getElementById('logs').innerHTML = val
+        }
 
         function request(options, temp) {
             let opts = temp

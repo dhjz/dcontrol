@@ -61,6 +61,20 @@ func ClickMouse(str string) {
 	}
 }
 
+func ScrollMouse(scroll int, weight int) {
+	var direct = -1 // 1: 向上滚动, -1: 向下滚动
+	if scroll > 0 {
+		direct = 1
+	}
+	if weight > 4 {
+		weight = 4
+	} else if weight < 1 {
+		weight = 1
+	}
+	var delta = 120 * weight * direct
+	procMouseEvent.Call(uintptr(0x0800), 0, 0, uintptr(delta), 0)
+}
+
 func Run(str string) {
 	RunKeys(GetKeys(str)...)
 }
