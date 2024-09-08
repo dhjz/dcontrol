@@ -15,13 +15,13 @@ const (
 )
 
 var (
-	user32                     = syscall.MustLoadDLL("user32")
-	isClipboardFormatAvailable = user32.MustFindProc("IsClipboardFormatAvailable")
-	openClipboard              = user32.MustFindProc("OpenClipboard")
-	closeClipboard             = user32.MustFindProc("CloseClipboard")
-	emptyClipboard             = user32.MustFindProc("EmptyClipboard")
-	getClipboardData           = user32.MustFindProc("GetClipboardData")
-	setClipboardData           = user32.MustFindProc("SetClipboardData")
+	// user32                     = syscall.MustLoadDLL("user32") // MustFindProc
+	isClipboardFormatAvailable = user32.NewProc("IsClipboardFormatAvailable")
+	openClipboard              = user32.NewProc("OpenClipboard")
+	closeClipboard             = user32.NewProc("CloseClipboard")
+	emptyClipboard             = user32.NewProc("EmptyClipboard")
+	getClipboardData           = user32.NewProc("GetClipboardData")
+	setClipboardData           = user32.NewProc("SetClipboardData")
 
 	kernel32     = syscall.NewLazyDLL("kernel32")
 	globalAlloc  = kernel32.NewProc("GlobalAlloc")

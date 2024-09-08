@@ -16,6 +16,7 @@ type AppConfig struct {
 	Mode string `mapstructure:"mode"`
 	Port int    `mapstructure:"port"`
 	Open bool   `mapstructure:"open"` // 是否启动打开应用
+	Volume bool   `mapstructure:"volume"` // 是否底部滚动监听控制音量
 
 	*Spide `mapstructure:"spide"`
 	Apps   []*App `mapstructure:"apps"`
@@ -61,6 +62,7 @@ func Init(filePath string) {
 		defaultConfig := `name: "远程控制"
 port: 666
 open: false
+volume: true
 apps:
   - name: 微信
     path: E:\Program Files (x86)\Tencent\WeChat\WeChat.exe

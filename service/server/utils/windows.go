@@ -5,6 +5,7 @@ package utils
 import (
 	"bytes"
 	"dcontrol/server/base"
+	"dcontrol/server/setting"
 	"fmt"
 	"image/jpeg"
 	"os"
@@ -110,25 +111,36 @@ func onReady() {
 	systray.SetIcon(iconData)
 	systray.SetTitle("D-Control")
 	systray.SetTooltip("D-Control 右键点击打开菜单！")
-	menuOpen := systray.AddMenuItem("打开网页", "打开系统网页")
+	menuOpen := systray.AddMenuItem("打开控制台", "打开系统控制台")
+	menuVolume := systray.AddMenuItem(getVolumeText(), "底部滚动控制系统音量")
 	systray.AddSeparator()
 	menuQuit := systray.AddMenuItem("退出", "退出程序")
 
 	go func() {
 		for {
 			select {
-			case <-menuOpen.ClickedCh:
-				OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
-			case <-menuQuit.ClickedCh:
-				systray.Quit()
-				os.Exit(0)
+				case <-menuOpen.ClickedCh:
+					OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
+				case <-menuVolume.ClickedCh:
+					setting.Conf.Volume = !setting.Conf.Volume
+					menuVolume.SetTitle(getVolumeText())
+				case <-menuQuit.ClickedCh:
+					systray.Quit()
+					os.Exit(0)
 			}
 		}
 	}()
-
 }
 
 func onExit() {}
+
+func getVolumeText() string {
+	if setting.Conf.Volume {
+		return "底部滚动音量: 开启"
+	} else {
+		return "底部滚动音量: 关闭"
+	}
+}
 
 var iconData []byte = []byte{
 	0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x20, 0x20, 0x00, 0x00, 0x01, 0x00,

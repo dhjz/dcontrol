@@ -5,6 +5,7 @@ import (
 	"dcontrol/server/monitor"
 	"dcontrol/server/setting"
 	"dcontrol/server/utils"
+	"dcontrol/server/keys"
 	"dcontrol/server/ws"
 	"flag"
 	"fmt"
@@ -49,7 +50,7 @@ func main() {
 	go func() {
 		utils.GenTaskBarIcon()
 	}()
-
+	keys.ListenScroll()
 	fmt.Println("start http.... ", base.RunPort)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {

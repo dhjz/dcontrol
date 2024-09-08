@@ -4,75 +4,13 @@ import (
 	"fmt"
 	"syscall"
 	"time"
-	"unsafe"
 )
 
-var dll = syscall.NewLazyDLL("user32.dll")
-var procKeyBd = dll.NewProc("keybd_event")
-var procSetCursorPos = dll.NewProc("SetCursorPos")
-var procGetCursorPos = dll.NewProc("GetCursorPos")
-var procMouseEvent = dll.NewProc("mouse_event")
-
-// 定义 POINT 结构体
-type POINT struct {
-	X int32
-	Y int32
-}
+var user32 = syscall.NewLazyDLL("user32.dll")
+var procKeyBd = user32.NewProc("keybd_event")
 
 type KeyBd struct {
 	keys []int
-}
-
-// 定义鼠标事件常量
-const (
-	MOUSEEVENTF_LEFTDOWN   = 0x0002 // 鼠标左键按下
-	MOUSEEVENTF_LEFTUP     = 0x0004 // 鼠标左键抬起
-	MOUSEEVENTF_RIGHTDOWN  = 0x0008 // 鼠标右键按下
-	MOUSEEVENTF_RIGHTUP    = 0x0010 // 鼠标右键抬起
-	MOUSEEVENTF_MIDDLEDOWN = 0x0020 // 鼠标中键按下
-	MOUSEEVENTF_MIDDLEUP   = 0x0040 // 鼠标中键抬起
-)
-
-var CursorPos POINT
-
-func SetMouse(x int, y int, isDiff bool) {
-	fmt.Println("cursorPos: ", CursorPos.X, CursorPos.Y, ", diff: ", x, y)
-	if isDiff {
-		procGetCursorPos.Call(uintptr(unsafe.Pointer(&CursorPos)))
-		procSetCursorPos.Call(uintptr(CursorPos.X+int32(x)), uintptr(CursorPos.Y+int32(y)))
-	} else {
-		procSetCursorPos.Call(uintptr(int32(x)), uintptr(int32(y)))
-	}
-}
-
-func ClickMouse(str string) {
-	if str == "L" {
-		procMouseEvent.Call(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-		time.Sleep(50 * time.Millisecond) // 短暂延迟
-		procMouseEvent.Call(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-	} else if str == "R" {
-		procMouseEvent.Call(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
-		time.Sleep(50 * time.Millisecond) // 短暂延迟
-		procMouseEvent.Call(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
-	} else if str == "M" {
-		procMouseEvent.Call(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0)
-		time.Sleep(50 * time.Millisecond) // 短暂延迟
-		procMouseEvent.Call(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0)
-	}
-}
-
-func ScrollMouse(scroll int, weight int) {
-	var direct = -1 // 1: 向上滚动, -1: 向下滚动
-	if scroll > 0 {
-		direct = 1
-	}
-	if weight > 4 {
-		weight = 4
-	} else if weight < 1 {
-		weight = 1
-	}
-	var delta = 120 * weight * direct
-	procMouseEvent.Call(uintptr(0x0800), 0, 0, uintptr(delta), 0)
 }
 
 func Run(str string) {
