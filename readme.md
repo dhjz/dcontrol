@@ -22,6 +22,8 @@ go mod tidy
 ```yml
 # congfig.yml
 port: 666
+open: true
+volume: true
 apps:
   - name: 微信
     path: E:\Program Files (x86)\Tencent\WeChat\WeChat.exe

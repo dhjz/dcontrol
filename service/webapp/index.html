@@ -356,19 +356,16 @@
             }
         }) */
 
-        window.addEventListener('keydown', (ev) => {
-            // Log the key code of the pressed key
-            logs('Key code:', ev.keyCode, ev,key);
-            
-            setTimeout(() => {
-                if (ev.keyCode === 33) { // Page Up
-                logs('Volume Up Key Detected');
-                } else if (ev.keyCode === 34) { // Page Down
-                    logs('Volume Down Key Detected');
-                }
-            }, 1000)
-            
-        });
+        // window.addEventListener('keydown', (ev) => {
+        //     logs('Key code:', ev.keyCode, ev.key);
+        //     setTimeout(() => {
+        //         if (ev.keyCode === 33) { // Page Up
+        //         logs('Volume Up Key Detected');
+        //         } else if (ev.keyCode === 34) { // Page Down
+        //             logs('Volume Down Key Detected');
+        //         }
+        //     }, 1000)
+        // });
 
         function logs(...val) {
             document.getElementById('logs').innerHTML = (val || []).join('  ')

@@ -50,7 +50,11 @@ func main() {
 	go func() {
 		utils.GenTaskBarIcon()
 	}()
-	keys.ListenScroll()
+	if setting.Conf.Volume {
+		go func() {
+			keys.ListenScroll()
+		}()
+	}
 	fmt.Println("start http.... ", base.RunPort)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
